@@ -58,14 +58,18 @@ export const StackPage: React.FC = () => {
     stack.reset();
     setStackToRender([...stack.elements]);
 
-    resetLoadingState();
+    setTimeout(() => {
+      resetLoadingState();
+    }, 500)
   };
 
   return (
     <SolutionLayout title="Стек">
       <form className={styles.form}>
         <Input
+          type="number"
           maxLength={LETTER_MAX_LENGTH}
+          max={4}
           isLimitText={true}
           placeholder="Введите значение"
           value={values.elem}
@@ -80,7 +84,7 @@ export const StackPage: React.FC = () => {
           name={StackButtons.Push}
           isLoader={isLoadingButton.button === StackButtons.Push}
           disabled={
-            !values.elem.length ||
+            values.elem.length > 4 || values.elem.length < 1 ||
             (isLoadingButton.isLoading &&
               isLoadingButton.button !== StackButtons.Push)
           }

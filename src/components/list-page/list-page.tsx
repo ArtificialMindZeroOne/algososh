@@ -213,6 +213,7 @@ export const ListPage: React.FC = () => {
     <SolutionLayout title="Связный список">
       <form className={styles.form}>
         <Input
+          type="number"
           maxLength={LETTER_MAX_LENGTH}
           isLimitText={true}
           placeholder="Введите значение"
@@ -227,7 +228,7 @@ export const ListPage: React.FC = () => {
           name={ListButtons.AddHead}
           isLoader={isLoadingButton.button === ListButtons.AddHead}
           disabled={
-            !values.value ||
+            !values.value || values.value.length > 4 ||
             (isLoadingButton.isLoading && isLoadingButton.button !== ListButtons.AddHead)
           }
           onClick={(e) => handleAddHead(values.value, e)}
@@ -239,7 +240,7 @@ export const ListPage: React.FC = () => {
           name={ListButtons.AddTail}
           isLoader={isLoadingButton.button === ListButtons.AddTail}
           disabled={
-            !values.value ||
+            !values.value || values.value.length > 4 ||
             (isLoadingButton.isLoading && isLoadingButton.button !== ListButtons.AddTail)
           }
           onClick={(e) => handleAddTail(values.value, e)}
@@ -268,6 +269,7 @@ export const ListPage: React.FC = () => {
           data-cy="button-delete-tail"
         />
         <Input
+          type="number"
           placeholder="Введите индекс"
           value={values.index}
           name="index"

@@ -110,15 +110,21 @@ export const QueuePage: React.FC = () => {
 
   const handleReset = async (e: MouseEvent<HTMLButtonElement>) => {
     setLoadingState(e);
-    queue.reset();
     await renderReset();
-    resetLoadingState();
+    queue.reset();
+    setTimeout(() => {
+      resetLoadingState();
+    }, 500)
+ 
+
+
   };
 
   return (
     <SolutionLayout title="Очередь">
       <form className={styles.form}>
         <Input
+          type="number"
           maxLength={LETTER_MAX_LENGTH}
           isLimitText={true}
           placeholder="Введите значение"
@@ -134,7 +140,7 @@ export const QueuePage: React.FC = () => {
           name={QueueButtons.Enqueue}
           isLoader={isLoadingButton.button === QueueButtons.Enqueue}
           disabled={
-            !values.el.length ||
+            !values.el.length || values.el.length > 4 ||
             tail === 6 ||
             (isLoadingButton.isLoading && isLoadingButton.button !== QueueButtons.Enqueue)
           }

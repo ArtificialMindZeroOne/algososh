@@ -1,4 +1,4 @@
-import React, { MouseEvent, useMemo, useState } from "react";
+import React, { MouseEvent, useMemo, useState, FormEvent } from "react";
 import {
   LETTER_MAX_LENGTH,
   QUEUE_SIZE,
@@ -115,16 +115,13 @@ export const QueuePage: React.FC = () => {
     setTimeout(() => {
       resetLoadingState();
     }, 500)
- 
-
-
   };
 
   return (
     <SolutionLayout title="Очередь">
-      <form className={styles.form}>
+      <form className={styles.form} onSubmit={evt => evt.preventDefault()}>
         <Input
-          type="number"
+          type="text"
           maxLength={LETTER_MAX_LENGTH}
           isLimitText={true}
           placeholder="Введите значение"

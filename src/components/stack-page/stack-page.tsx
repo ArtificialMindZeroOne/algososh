@@ -54,10 +54,8 @@ export const StackPage: React.FC = () => {
 
   const reset = (e: MouseEvent<HTMLButtonElement>) => {
     setLoadingState(e);
-
     stack.reset();
     setStackToRender([...stack.elements]);
-
     setTimeout(() => {
       resetLoadingState();
     }, 500)
@@ -65,11 +63,10 @@ export const StackPage: React.FC = () => {
 
   return (
     <SolutionLayout title="Стек">
-      <form className={styles.form}>
+      <form className={styles.form} onSubmit={evt => evt.preventDefault()}>
         <Input
-          type="number"
+          type="text"
           maxLength={LETTER_MAX_LENGTH}
-          max={4}
           isLimitText={true}
           placeholder="Введите значение"
           value={values.elem}

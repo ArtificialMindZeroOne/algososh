@@ -213,7 +213,7 @@ export const ListPage: React.FC = () => {
     <SolutionLayout title="Связный список">
       <form className={styles.form}>
         <Input
-          type="number"
+          type="text"
           maxLength={LETTER_MAX_LENGTH}
           isLimitText={true}
           placeholder="Введите значение"

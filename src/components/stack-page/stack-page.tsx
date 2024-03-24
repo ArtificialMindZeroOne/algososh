@@ -1,142 +1,109 @@
-import React, { MouseEvent, useMemo, useState } from "react";
-import { LETTER_MAX_LENGTH } from "../../constants/data-constraints";
-import { SHORT_DELAY_IN_MS } from "../../constants/delays";
-import { useBtn } from "../../hooks/useBtn";
-import { useForm } from "../../hooks/useForm";
-import { StackButtons } from "../../types/btn-names";
-import type { TStackElem } from "../../types/data";
-import { ElementStates } from "../../types/element-states";
-import { delay } from "../../utils/delay";
-import { Button } from "../ui/button/button";
-import { Circle } from "../ui/circle/circle";
-import { Input } from "../ui/input/input";
+import React, { SyntheticEvent } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
-import { Stack } from "./stack";
-import styles from "./stack-page.module.css";
+import styles from "./stack.module.css";
+import { useForm } from "../../hooks/hooks";
+import { Input } from "../ui/input/input";
+import { Button } from "../ui/button/button";
+import { Stack } from "./utils";
+import { ElementStates } from "../../types/element-states";
+import { useState } from "react";
+import { timeout } from "../../utils/functions";
+import { Circle } from "../ui/circle/circle";
+import { IString } from "../../types/my-types";
 
 export const StackPage: React.FC = () => {
-  const [stackToRender, setStackToRender] = useState<TStackElem[]>([]);
-  const [changingElemIndex, setChangingElemIndex] = useState<number | null>(
-    null
-  );
-  const { values, handleChange, setValues } = useForm({ elem: "" });
-  const { isLoadingButton, setLoadingState, resetLoadingState } = useBtn();
+  const { values, handleChange, setValues } = useForm({ value: "" });
+  const [stack, setStack] = useState(new Stack<IString>());
+  const [arr, setArr] = useState<IString[]>([]);
+  const [isLoader, setIsLoader] = useState(false);
 
-  const stack = useMemo(() => new Stack<TStackElem>(), []);
-
-  const handlePush = async (
-    elem: TStackElem,
-    e: MouseEvent<HTMLButtonElement>
-  ) => {
-    setLoadingState(e);
-
-    stack.push(elem);
-    setStackToRender(stack.elements);
-    setValues({ ...values, elem: "" });
-    setChangingElemIndex(stack.size);
-    await delay(SHORT_DELAY_IN_MS);
-    setChangingElemIndex(null);
-
-    resetLoadingState();
-  };
-
-  const handlePop = async (e: MouseEvent<HTMLButtonElement>) => {
-    setLoadingState(e);
-
-    setChangingElemIndex(stack.size);
-    await delay(SHORT_DELAY_IN_MS);
-    stack.pop();
-    setStackToRender(stack.elements);
-    setChangingElemIndex(null);
-
-    resetLoadingState();
-  };
-
-  const reset = (e: MouseEvent<HTMLButtonElement>) => {
-    setLoadingState(e);
-    stack.reset();
-    setStackToRender([...stack.elements]);
-    setTimeout(() => {
-      resetLoadingState();
-    }, 500)
+  const onClick = async (evt: SyntheticEvent, textButton: string) => {
+    evt.preventDefault();
+    const array = stack.getEl();
+    if (values.value !== "" && textButton === "Добавить") {
+      setIsLoader(true);
+      stack.push({ value: values.value, color: ElementStates.Changing });
+      setStack(stack);
+      setArr([...array]);
+      setValues({ value: "" });
+      await timeout(500);
+      setIsLoader(false);
+      stack.peak()!.color = ElementStates.Default;
+      setStack(stack);
+      setArr([...array]);
+    } else if (textButton === "Удалить") {
+      stack.peak()!.color = ElementStates.Changing;
+      setStack(stack);
+      setArr([...array]);
+      await timeout(500);
+      stack.pop();
+      await timeout(500);
+      setStack(stack);
+      setArr([...array]);
+    } else if (textButton === "Очистить") {
+      const length = stack.getSize();
+      let i = 0;
+      for (i; i < length; i++) {
+        stack.pop();
+        setStack(stack);
+      }
+      setArr([...array]);
+    }
   };
 
   return (
     <SolutionLayout title="Стек">
-      <form className={styles.form} onSubmit={evt => evt.preventDefault()}>
+      <form className={styles.input_container} onSubmit={evt => evt.preventDefault()}>
         <Input
-          type="text"
-          maxLength={LETTER_MAX_LENGTH}
           isLimitText={true}
-          placeholder="Введите значение"
-          value={values.elem}
-          name="elem"
+          max={4}
+          maxLength={4}
+          value={values.value}
+          name="value"
           onChange={handleChange}
-          extraClass="mr-6"
-          data-cy="input"
+          type="string"
+          extraClass={styles.input}
         />
-        <Button
-          text={"Добавить"}
-          type="button"
-          name={StackButtons.Push}
-          isLoader={isLoadingButton.button === StackButtons.Push}
-          disabled={
-            values.elem.length > 4 || values.elem.length < 1 ||
-            (isLoadingButton.isLoading &&
-              isLoadingButton.button !== StackButtons.Push)
-          }
-          onClick={(e) => handlePush(values.elem, e)}
-          extraClass="mr-6"
-          data-cy="button-push"
-        />
-        <Button
-          text={"Удалить"}
-          type="button"
-          name={StackButtons.Pop}
-          isLoader={isLoadingButton.button === StackButtons.Pop}
-          disabled={
-            !stack.size ||
-            (isLoadingButton.isLoading &&
-              isLoadingButton.button !== StackButtons.Pop)
-          }
-          onClick={(e) => handlePop(e)}
-          extraClass="mr-40"
-          data-cy="button-pop"
-        />
-        <Button
-          text={"Очистить"}
-          type="reset"
-          name={StackButtons.Reset}
-          isLoader={isLoadingButton.button === StackButtons.Reset}
-          onClick={(e) => reset(e)}
-          disabled={
-            !stack.size ||
-            (isLoadingButton.isLoading &&
-              isLoadingButton.button !== StackButtons.Reset)
-          }
-          data-cy="button-reset"
-        />
-      </form>
-      {stackToRender && (
-        <div className={styles.wrapper}>
-          <ul className={styles.series}>
-            {stackToRender.map((item, index) => (
-              <li key={index}>
-                <Circle
-                  letter={item}
-                  state={
-                    index === changingElemIndex
-                      ? ElementStates.Changing
-                      : ElementStates.Default
-                  }
-                  index={index - 1}
-                  head={index === stack.size ? "top" : null}
-                />
-              </li>
-            ))}
-          </ul>
+        <div className={styles.buttons_container}>
+          <Button
+            text="Добавить"
+            type="submit"
+            isLoader={isLoader}
+            onClick={(e) => onClick(e, "Добавить")}
+            disabled={values.value === "" ? true : false}
+            linkedList="small"
+            id='addButton'
+          />
+          <Button
+            text="Удалить"
+            type="submit"
+            onClick={(e) => onClick(e, "Удалить")}
+            disabled={stack.getSize() > 0 ? false : true}
+            id='deleteButton'
+          />
+          <Button
+            text="Очистить"
+            type="button"
+            extraClass={styles.clear}
+            onClick={(e) => onClick(e, "Очистить")}
+            disabled={stack.getSize() > 0 ? false : true}
+            id='clearButton'
+          />
         </div>
-      )}
+      </form>
+      <ul className={styles.circle_container}>
+        {arr?.map((item, index) => (
+          <li key={index} className={styles.circle_item}>
+            <Circle
+              letter={item.value}
+              state={item.color}
+              extraClass={`${styles.fadeIn}`}
+              index={index}
+              head={stack.peak() === item ? "top" : ""}
+            />
+          </li>
+        ))}
+      </ul>
     </SolutionLayout>
   );
 };

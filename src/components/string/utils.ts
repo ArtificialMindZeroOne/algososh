@@ -1,37 +1,34 @@
-import { TStringElem } from "../../types/data";
+import { DELAY_IN_MS } from "../../constants/delays";
+import { IString } from "../../types/my-types";
 import { ElementStates } from "../../types/element-states";
-import { swap } from "../../utils/swap";
+import { swap, timeout } from "../../utils/functions";
 
-export const formInitialArr = (string: string) =>
-  string
-    .split("")
-    .map((item) => ({ item: item, state: ElementStates.Default }));
-
-export const reverseBySteps = (
-  arr: TStringElem[],
-  start: number,
-  end: number,
-  acc: TStringElem[][]
+export const sortArray = async (
+  arr: IString[],
+  setState: React.Dispatch<React.SetStateAction<IString[]>>,
+  loader: (value: React.SetStateAction<boolean>) => void
 ) => {
-  if (end < start) {
-    return acc;
+  const { length } = arr;
+  if (arr.length === 0) {
+    return arr;
   }
-
-  if (end === start) {
-    arr[end] = { ...arr[end], state: ElementStates.Modified };
-    acc.push([...arr]);
-    return acc;
+  let start = 0;
+  let end;
+  let mid = Math.floor(length / 2);
+  for (start; start < mid; start++) {
+    end = length - 1 - start
+    if (start < end) {
+      arr[start].color = ElementStates.Changing;
+      arr[end].color = ElementStates.Changing;
+      setState([...arr]);
+    }
+    swap(arr, start, end);
+    arr[start].color = ElementStates.Modified;
+    arr[end].color = ElementStates.Modified;
+    await timeout(DELAY_IN_MS);
   }
-  arr[start] = { ...arr[start], state: ElementStates.Changing };
-  arr[end] = { ...arr[end], state: ElementStates.Changing };
-  acc.push([...arr]);
-
-  swap<TStringElem>(arr, start, end);
-  arr[start] = { ...arr[start], state: ElementStates.Modified };
-  arr[end] = { ...arr[end], state: ElementStates.Modified };
-  acc.push([...arr]);
-
-  reverseBySteps(arr, start + 1, end - 1, acc);
-
-  return acc;
+  arr[start].color = ElementStates.Modified;
+  setState([...arr]);
+  loader(false);
+  return arr;
 };

@@ -1,118 +1,107 @@
-import { Step } from "../../types/data";
-import { Direction } from "../../types/direction";
+import { INumber } from "../../types/my-types";
+import { swap, timeout } from "../../utils/functions";
 import { ElementStates } from "../../types/element-states";
+import { SHORT_DELAY_IN_MS } from "../../constants/delays";
+import { Direction } from "../../types/direction";
 
-export const getColumnState = (index: number, step: Step): ElementStates => {
-  let state = ElementStates.Default;
-  if (step.sortedRange.includes(index)) {
-    state = ElementStates.Modified;
+export const randomArr = (min: number, max: number): INumber[] => {
+  const arr: INumber[] = [];
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  const maxLen = 17;
+  const minLen = 3;
+  let randomLen = Math.floor(Math.random() * (maxLen - minLen + 1) + minLen);
+  for (let i = 0; i <= randomLen; i++) {
+    let randomNum = Math.floor(Math.random() * (max - min + 1) + min);
+    arr.push({ value: randomNum });
   }
-  if (index === step.indexI || index === step.indexJ) {
-    state = ElementStates.Changing;
-  }
-  return state;
+  return arr;
 };
 
-export const selectionSort = (arr: number[], direction: Direction) => {
-  const steps: Step[] = [];
-
-  steps.push({
-    currentArray: [...arr],
-    indexI: null,
-    indexJ: null,
-    sortedRange: [],
-  });
-  if (arr.length > 0) {
-    for (let i = 0; i < arr.length - 1; i++) {
-      let minIndex = i;
-
-      for (let j = i + 1; j < arr.length; j++) {
-        steps.push({
-          currentArray: [...arr],
-          indexI: i,
-          indexJ: j,
-          sortedRange: [...steps[steps.length - 1]?.sortedRange],
-        });
-        if (
-          direction === Direction.Ascending
-            ? arr[j] < arr[minIndex]
-            : arr[j] > arr[minIndex]
-        ) {
-          minIndex = j;
-        }
-      }
-      if (minIndex !== i) {
-        [arr[i], arr[minIndex]] = [arr[minIndex], arr[i]];
-      }
-      steps[steps.length - 1].sortedRange.push(i);
-    }
-
-    steps.push({
-      currentArray: [...arr],
-      indexI: null,
-      indexJ: null,
-      sortedRange: [...steps[steps.length - 1].sortedRange, arr.length - 1],
-    });
+//сортировка выбором по убыванию и возрастанию
+export const selectionSort = async (
+  arr: INumber[],
+  setState: React.Dispatch<React.SetStateAction<INumber[]>>,
+  loader: (value: React.SetStateAction<boolean>) => void,
+  derection: Direction,
+  disabled: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+  if (arr.length === 0) {
+    return arr;
   }
-  return steps;
+  let { length } = arr;
+  for (let i = 0; i < length; i++) {
+    let maxMax = i;
+    arr[maxMax].color = ElementStates.Changing;
+    setState([...arr]);
+    for (let j = i + 1; j < length; j++) {
+      arr[j].color = ElementStates.Changing;
+      setState([...arr]);
+      await timeout(SHORT_DELAY_IN_MS);
+      if (derection === Direction.Ascending && arr[j].value! > arr[maxMax].value!) {
+        maxMax = j;
+      } else if (
+        derection === Direction.Descending &&
+        arr[j].value! < arr[maxMax].value!
+      ) {
+        maxMax = j;
+      }
+      arr[j].color = ElementStates.Default;
+      setState([...arr]);
+      await timeout(SHORT_DELAY_IN_MS);
+    }
+    if (maxMax !== i) {
+      swap(arr, i, maxMax);
+      arr[maxMax].color = ElementStates.Default;
+      arr[i].color = ElementStates.Modified;
+      setState([...arr]);
+      await timeout(SHORT_DELAY_IN_MS);
+    }
+    arr[i].color = ElementStates.Modified;
+    setState([...arr]);
+  }
+  loader(false);
+  disabled(false);
+  return arr;
 };
 
-export const bubbleSort = (arr: number[], direction: Direction) => {
-  const steps: Step[] = [];
-
-  steps.push({
-    currentArray: [...arr],
-    indexI: null,
-    indexJ: null,
-    sortedRange: [],
-  });
-  if (arr.length > 0) {
-    let isSorted = false;
-    for (let i = 0; i < arr.length; i++) {
-      if (isSorted) {
-        steps.push({
-          currentArray: [...arr],
-          indexI: null,
-          indexJ: null,
-          sortedRange: [...steps[steps.length - 1].sortedRange],
-        });
-        for (let h = 0; h < arr.length - i; h++) {
-          steps[steps.length - 1].sortedRange.push(h);
-        }
-        return steps;
-      }
-      for (let j = 0; j < arr.length - i - 1; j++) {
-        steps.push({
-          currentArray: [...arr],
-          indexI: j,
-          indexJ: j + 1,
-          sortedRange: [...steps[steps.length - 1]?.sortedRange],
-        });
-        isSorted = true;
-        if (
-          direction === Direction.Ascending
-            ? arr[j] > arr[j + 1]
-            : arr[j] < arr[j + 1]
-        ) {
-          [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
-          isSorted = false;
-        }
-        if (j + 1 === arr.length - i - 1) {
-          steps[steps.length - 1].sortedRange.push(arr.length - i - 1);
-        }
-      }
-    }
-
-    steps.push({
-      currentArray: [...arr],
-      indexI: null,
-      indexJ: null,
-      sortedRange: [...steps[steps.length - 1].sortedRange],
-    });
-
-    if (steps[steps.length - 1].sortedRange.length !== arr.length) {
-      steps[steps.length - 1].sortedRange.push(0);
-    }
+//сортировка пузырьком по убыванию и возрастанию
+export const bubbleSort = async (
+  arr: INumber[],
+  setState: React.Dispatch<React.SetStateAction<INumber[]>>,
+  loader: (value: React.SetStateAction<boolean>) => void,
+  derection: Direction,
+  disabled: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+  if (arr.length === 0) {
+    return arr;
   }
-  return steps;
+  let { length } = arr;
+  for (let i = 0; i < length; i++) {
+    for (let j = 0; j < length - i - 1; j++) {
+      arr[j].color = ElementStates.Changing;
+      arr[j + 1].color = ElementStates.Changing;
+      setState([...arr]);
+      await timeout(SHORT_DELAY_IN_MS);
+      if (
+        derection === Direction.Ascending &&
+        arr[j].value! < arr[j + 1].value!
+      ) {
+        swap(arr, j, j + 1);
+      } else if (
+        derection === Direction.Descending &&
+        arr[j].value! > arr[j + 1].value!
+      ) {
+        swap(arr, j, j + 1);
+      }
+      arr[j].color = ElementStates.Default;
+      setState([...arr]);
+      await timeout(SHORT_DELAY_IN_MS);
+    }
+    arr[length - i - 1].color = ElementStates.Modified;
+    setState([...arr]);
+  }
+  loader(false);
+  disabled(false);
+  return arr;
 };

@@ -1,38 +1,37 @@
-import React from "react";
 import renderer from "react-test-renderer";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Button } from "./button";
 
-const testData = {
-  text: "test",
-};
+describe("Testing the Button component", () => {
 
-describe("Button component", () => {
-  it("renders default", () => {
-    const button = renderer.create(<Button />).toJSON();
-    expect(button).toMatchSnapshot();
+  it("should be the correct display of the button with text", () => {
+    const tree = renderer.create(<Button text="Teст" />).toJSON();
+    expect(tree).toMatchSnapshot();
   });
 
-  it("renders with text", () => {
-    const button = renderer.create(<Button text={testData.text} />).toJSON();
-    expect(button).toMatchSnapshot();
+  it("should be the correct display of the button without text", () => {
+    const tree = renderer.create(<Button />).toJSON();
+    expect(tree).toMatchSnapshot();
   });
 
-  it("renders when disabled", () => {
-    const button = renderer.create(<Button disabled />).toJSON();
-    expect(button).toMatchSnapshot();
+  it("should be the correct display of the locked button", () => {
+    const tree = renderer.create(<Button disabled={true} />).toJSON();
+    expect(tree).toMatchSnapshot();
   });
 
-  it("renders when loading", () => {
-    const button = renderer.create(<Button isLoader />).toJSON();
-    expect(button).toMatchSnapshot();
+  it("should be the correct button with a loading indication", () => {
+    const tree = renderer.create(<Button isLoader={true} />).toJSON();
+    expect(tree).toMatchSnapshot();
   });
 
-  it("fires callback on click", () => {
+  it("should be a correct callback call when the button is clicked", () => {
     const callback = jest.fn();
-    render(<Button text={testData.text} onClick={callback}/>);
-    const button = screen.getByText(testData.text);
+    render(<Button onClick={callback} />);
+    // Находим кнопку
+    const button = screen.getByRole("button");
+    // Имитируем нажатие на кнопку
     fireEvent.click(button);
-    expect(callback).toBeCalled();
+    // Проверяем, что колбек был вызван
+    expect(callback).toHaveBeenCalled();
   });
 });

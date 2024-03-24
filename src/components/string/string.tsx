@@ -1,67 +1,65 @@
-import React, { FormEvent, useState } from "react";
-import { STRING_MAX_LENGTH } from "../../constants/data-constraints";
-import { DELAY_IN_MS } from "../../constants/delays";
-import { useForm } from "../../hooks/useForm";
-import type { TStringElem } from "../../types/data";
-import { delay } from "../../utils/delay";
+import React from "react";
+import { SolutionLayout } from "../ui/solution-layout/solution-layout";
+import { Input } from "../ui/input/input";
 import { Button } from "../ui/button/button";
 import { Circle } from "../ui/circle/circle";
-import { Input } from "../ui/input/input";
-import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import styles from "./string.module.css";
-import { formInitialArr, reverseBySteps } from "./utils";
+import { useState } from "react";
+import { timeout } from "../../utils/functions";
+import { sortArray } from "../string/utils"
+import { DELAY_IN_MS } from "../../constants/delays";
+import { useForm } from "../../hooks/hooks";
+import { ElementStates } from "../../types/element-states";
+import { IString } from "../../types/my-types"
 
 export const StringComponent: React.FC = () => {
-  const [string, setString] = useState<TStringElem[]>([]);
-  const { values, handleChange } = useForm({ string: "" });
-  const [isLoading, setIsLoading] = useState(false);
+  const { values, handleChange } = useForm({ value: "" });
+  const [stringArr, setStringArr] = useState<IString[]>([]);
+  const [isLoader, setIsLoader] = useState(false);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const initArr = formInitialArr(values.string);
-    const steps = reverseBySteps(initArr, 0, initArr.length - 1, [[...initArr]]);
-    if (steps?.length) {
-      for (const step of steps) {
-        setString([...step]);
-        await delay(DELAY_IN_MS);
-      }
-    } else {
-      setString([]);
-    }
-    setIsLoading(false);
+  const onClick = async () => {
+    setIsLoader(true);
+    const arrayString = Array.from(values.value);
+    const arrayObj = arrayString.map((value) => ({
+      value,
+      color: ElementStates.Default,
+    })) as IString[];
+    setStringArr([...arrayObj]);
+    await timeout(DELAY_IN_MS);
+    sortArray(arrayObj, setStringArr, setIsLoader);
   };
 
   return (
     <SolutionLayout title="Строка">
-      <form className={styles.form} onSubmit={handleSubmit}>
+      <form className={styles.input_container}>
         <Input
-          maxLength={STRING_MAX_LENGTH}
           isLimitText={true}
-          value={values.string}
-          name="string"
+          maxLength={11}
+          value={values.value}
+          name="value"
           onChange={handleChange}
-          extraClass="mr-6"
-          data-cy="input"
+          data-testid="input"
         />
         <Button
-          text={"Развернуть"}
+          text="Развернуть"
           type="submit"
-          isLoader={isLoading}
-          disabled={!values.string.length}
-          data-cy="submit"
+          isLoader={isLoader}
+          onClick={onClick}
+          disabled={values.value === "" ? true : false}
+        //data-testid="button"
         />
       </form>
-      {string && (
-        <ul className={styles.letters}>
-          {string.map((item, index) => (
-            <li key={index}>
-              <Circle letter={item.item} state={item.state} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className={styles.circle_container}>
+        {stringArr?.map((item, index) => (
+          <li key={index} className={styles.circle_item}>
+            <Circle
+              letter={item.value}
+              state={item.color}
+              extraClass={`${styles.fadeIn}`}
+            />
+          </li>
+        ))}
+      </ul>
     </SolutionLayout>
   );
 };

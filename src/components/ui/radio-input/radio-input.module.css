@@ -31,7 +31,7 @@
   left: -30px;
 }
 
-input:checked + .label::after {
+input:checked+.label::after {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -39,23 +39,23 @@ input:checked + .label::after {
   left: -22px;
 }
 
-.input:hover + .label::before {
+.input:hover+.label::before {
   background-color: var(--bg-input-disabled);
 }
 
-.input:active + .label::before {
+.input:active+.label::before {
   border: 2px solid var(--text-input-placeholder);
 }
 
-.input:active + .label::after {
+.input:active+.label::after {
   background-color: var(--text-input-placeholder);
 }
 
-.input:disabled + .label::before {
+.input:disabled+.label::before {
   background: var(--bg-input-disabled);
   border: 2px solid var(--text-input-placeholder);
 }
 
-.input:disabled + .label::after {
+.input:disabled+.label::after {
   background: var(--text-input-placeholder);
 }

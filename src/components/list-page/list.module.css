@@ -1,0 +1,46 @@
+.inputs_container {
+    margin: 0 auto;
+    max-width: 952px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input_container {
+    max-width: 100%;
+    display: flex;
+    gap: 12px;
+  }
+
+  .input {
+    max-width: 204px;
+  }
+
+  .buttons_container {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  
+  .buttons_index {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  } 
+
+  .circle_container {
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    padding-top: 120px;
+    padding-left: 0;
+    list-style-type: none;
+    gap: 16px;
+  }
+
+  .circle_item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  

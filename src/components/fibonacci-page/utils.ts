@@ -1,7 +1,30 @@
-export const calcFibonacciArray = (index: number, initialArray: number[]) => {
-  for (let i = 2; i <= index; i++) {
-    initialArray[i] = initialArray[i - 1] + initialArray[i - 2];
-  }
+import { timeout } from "../../utils/functions";
+import { SHORT_DELAY_IN_MS } from "../../constants/delays";
 
-  return initialArray;
+export const getFibonacciNumbers = (n: number) => {
+  let arr: number[] = [1, 1];
+  if (n === 0) {
+    return arr = [1];
+  }
+  for (let i = 2; i < n + 1; i++) {
+    arr.push(arr[i - 2] + arr[i - 1]);
+  }
+  return arr;
+};
+
+export const arrayTimeOut = async (
+  arr: string[],
+  setState: React.Dispatch<React.SetStateAction<string[]>>,
+  loader: (value: React.SetStateAction<boolean>) => void
+) => {
+  const { length } = arr;
+  let numberArray = [];
+  let i = 0;
+  for (i; i < length; i++) {
+    numberArray.push(arr[i]);
+    await timeout(SHORT_DELAY_IN_MS);
+    setState(numberArray.map(String));
+  }
+  loader(false);
+  return numberArray;
 };

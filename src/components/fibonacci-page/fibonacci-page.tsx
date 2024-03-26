@@ -1,80 +1,65 @@
-import React, { FormEvent, useState } from "react";
-import { FIBONACCI_MAX_INDEX } from "../../constants/data-constraints";
-import { SHORT_DELAY_IN_MS } from "../../constants/delays";
-import { useForm } from "../../hooks/useForm";
-import { delay } from "../../utils/delay";
-import { Button } from "../ui/button/button";
-import { Circle } from "../ui/circle/circle";
-import { Input } from "../ui/input/input";
+import React, { useState } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
-import styles from "./fibonacci-page.module.css";
-import { calcFibonacciArray } from "./utils";
+import { useForm } from "../../hooks/hooks";
+import { Input } from "../ui/input/input";
+import { Button } from "../ui/button/button";
+import styles from "./fibonacci.module.css";
+import { getFibonacciNumbers, arrayTimeOut } from "../fibonacci-page/utils";
+import { Circle } from "../ui/circle/circle";
 
 export const FibonacciPage: React.FC = () => {
-  const [fibonacciArray, setFibonacciArray] = useState<number[]>([]);
-  const { values, handleChange } = useForm({ index: "" });
-  const [isLoading, setIsLoading] = useState(false);
+  const { values, handleChange } = useForm({ value: "" });
+  const [arrayNumber, setArrayNumber] = useState<string[]>([]);
+  const [isLoader, setIsLoader] = useState(false);
+  const number = Number(values.value);
 
-  const initialFib = [1, 1];
+  const onClick = () => {
+    setIsLoader(true);
+    const arrayNum = getFibonacciNumbers(number).map(String);
+    arrayTimeOut(arrayNum, setArrayNumber, setIsLoader);
+  };
 
-  const renderFib = async (index: number, initialArr: number[]) => {
-    setIsLoading(true);
-    setFibonacciArray([]);
-    const fibonacciArray = calcFibonacciArray(index, initialArr);;
-
-    for (let fib of fibonacciArray) {
-      setFibonacciArray(arr => [...arr, fib]);
-      await delay(SHORT_DELAY_IN_MS);
+  const disBtn = (num: number) => {
+    if (num > 19) {
+      return true
+    } else if (num < 1) {
+      return true
+    } else {
+      return false
     }
-    setIsLoading(false);
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    renderFib(Number(values.index), initialFib);
-
-  };
+  }
 
   return (
     <SolutionLayout title="Последовательность Фибоначчи">
-      <form className={styles.form} onSubmit={handleSubmit}>
+      <form className={styles.input_container}>
         <Input
-          type="number"
-          max={FIBONACCI_MAX_INDEX}
+          isLimitText={true}
+          max={19}
           min={1}
-          isLimitNumbers={true}
-          placeholder="Введите число"
-          value={values.index}
-          name="index"
+          value={values.value}
+          name="value"
           onChange={handleChange}
-          extraClass="mr-6"
-          data-cy="input"
+          type="number"
         />
         <Button
-          text={"Развернуть"}
+          text="Рассчитать"
           type="submit"
-          isLoader={isLoading}
-          disabled={
-            !values.index ||
-            Number(values.index) < 1 ||
-            Number(values.index) > FIBONACCI_MAX_INDEX ||
-            !Number.isInteger(Number(values.index))
-          }
-          data-cy="submit"
+          isLoader={isLoader}
+          onClick={onClick}
+          disabled={disBtn(number)}
         />
       </form>
-      {fibonacciArray && (
-        <div className={styles.wrapper}>
-          <ul className={styles.series}>
-            {fibonacciArray.map((item, index) => (
-              <li key={index}>
-                <Circle letter={item.toString()} index={index} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <ul className={styles.circle_container}>
+        {arrayNumber?.map((item, index) => (
+          <li key={index} className={styles.circle_item}>
+            <Circle
+              letter={item}
+              extraClass={`${styles.fadeIn}`}
+              index={index}
+            />
+          </li>
+        ))}
+      </ul>
     </SolutionLayout>
   );
 };

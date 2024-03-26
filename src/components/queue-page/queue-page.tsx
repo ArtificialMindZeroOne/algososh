@@ -1,194 +1,116 @@
-import React, { MouseEvent, useMemo, useState, FormEvent } from "react";
-import {
-  LETTER_MAX_LENGTH,
-  QUEUE_SIZE,
-} from "../../constants/data-constraints";
-import { SHORT_DELAY_IN_MS } from "../../constants/delays";
-import { HEAD, TAIL } from "../../constants/element-captions";
-import { useBtn } from "../../hooks/useBtn";
-import { useForm } from "../../hooks/useForm";
-import { QueueButtons } from "../../types/btn-names";
-import type { TQueueElem, TQueueRenderElem } from "../../types/data";
-import { ElementStates } from "../../types/element-states";
-import { delay } from "../../utils/delay";
-import { Button } from "../ui/button/button";
-import { Circle } from "../ui/circle/circle";
-import { Input } from "../ui/input/input";
+import React, { SyntheticEvent, useEffect } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
-import { Queue } from "./queue";
-import styles from "./queue-page.module.css";
+import styles from "./queue.module.css";
+import { useForm } from "../../hooks/hooks";
+import { Input } from "../ui/input/input";
+import { Button } from "../ui/button/button";
+import { Queue } from "./utils";
+import { ElementStates } from "../../types/element-states";
+import { useState } from "react";
+import { timeout } from "../../utils/functions";
+import { Circle } from "../ui/circle/circle";
+import { IString } from "../../types/my-types";
+import { SHORT_DELAY_IN_MS } from "../../constants/delays"
 
 export const QueuePage: React.FC = () => {
-  const elemInit: TQueueRenderElem = {
-    letter: "",
-    state: ElementStates.Default,
-  };
-  const queueInit = Array(QUEUE_SIZE).fill(elemInit);
-  const headInit = -1;
-  const tailInit = -1;
+  const initialState = Array.from({ length: 7 }).map(() => ({
+    value: "",
+    color: ElementStates.Default,
+  })) as IString[];
+  const { values, handleChange, setValues } = useForm({ value: "" });
+  const [arr, setArr] = useState<IString[]>(initialState);
+  const [queue, setQueue] = useState(new Queue<IString>(7));
+  const [isLoader, setIsLoader] = useState(false);
+  let array = queue.getEl() as IString[];
 
-  const queue = useMemo(() => new Queue<TQueueElem>(QUEUE_SIZE), []);
-
-  const [queueToRender, setQueueToRender] =
-    useState<TQueueRenderElem[]>(queueInit);
-  const [head, setHead] = useState(headInit);
-  const [tail, setTail] = useState(tailInit);
-
-  const { values, handleChange, setValues } = useForm({ el: "" });
-  const { isLoadingButton, setLoadingState, resetLoadingState } = useBtn();
-
-  const renderReset = async () => {
-    setHead(headInit);
-    setTail(tailInit);
-    setQueueToRender([...queueInit]);
-  };
-
-  const renderEnqueue = async (value: string) => {
-    const tailIndex = queue.tailPointer;
-
-    const newElem: TQueueRenderElem = {
-      letter: value,
-      state: ElementStates.Changing,
-    };
-
-    queueToRender[tailIndex] = {
-      ...queueToRender[tailIndex],
-      state: ElementStates.Changing,
-    };
-    setQueueToRender([...queueToRender]);
-    await delay(SHORT_DELAY_IN_MS);
-
-    setTail((t) => t + 1);
-    tailIndex === 0 && setHead((h) => h + 1);
-
-    queueToRender[tailIndex] = newElem;
-    setQueueToRender([...queueToRender]);
-    await delay(SHORT_DELAY_IN_MS);
-
-    queueToRender[tailIndex] = {
-      ...queueToRender[tailIndex],
-      state: ElementStates.Default,
-    };
-    setQueueToRender([...queueToRender]);
-  };
-
-  const renderDequeue = async () => {
-    const headIndex = queue.headPointer;
-    const tailIndex = queue.tailPointer;
-
-    queueToRender[headIndex] = {
-      ...queueToRender[headIndex],
-      state: ElementStates.Changing,
-    };
-    setQueueToRender([...queueToRender]);
-    await delay(SHORT_DELAY_IN_MS);
-
-    queueToRender[headIndex] = elemInit;
-    if (headIndex === tailIndex) {
-      queue.reset();
-      renderReset();
-      return;
+  const onClick = async (evt: SyntheticEvent, textButton: string) => {
+    evt.preventDefault();
+    if (values.value !== "" && textButton === "Добавить") {
+      setIsLoader(true);
+      queue.enqueue({ value: values.value, color: ElementStates.Changing });
+      setQueue(queue);
+      setArr([...array]);
+      await timeout(SHORT_DELAY_IN_MS);
+      setIsLoader(false);
+      queue.getTeil()!.color = ElementStates.Default;
+      setValues({ value: "" });
+      setArr([...array]);
+    } else if (textButton === "Удалить") {
+      queue.peak()!.color = ElementStates.Changing;
+      setQueue(queue);
+      setArr([...array]);
+      await timeout(SHORT_DELAY_IN_MS);
+      queue.dequeue();
+      setQueue(queue);
+      await timeout(SHORT_DELAY_IN_MS);
+      setArr([...array]);
+    } else if (textButton === "Очистить") {
+      queue.clear();
+      setQueue(queue);
+      array = initialState;
+      setArr([...array]);
     }
-    setHead((h) => h + 1);
-    setQueueToRender([...queueToRender]);
-  };
-
-  const handleEnqueue = async (el: string, e: MouseEvent<HTMLButtonElement>) => {
-    setLoadingState(e);
-    setValues({ ...values, el: "" });
-    queue.enqueue(el);
-    await renderEnqueue(el);
-    resetLoadingState();
-  };
-
-  const handleDequeue = async (e: MouseEvent<HTMLButtonElement>) => {
-    setLoadingState(e);
-    await renderDequeue();
-    queue.dequeue();
-    resetLoadingState();
-  };
-
-  const handleReset = async (e: MouseEvent<HTMLButtonElement>) => {
-    setLoadingState(e);
-    await renderReset();
-    queue.reset();
-    setTimeout(() => {
-      resetLoadingState();
-    }, 500)
   };
 
   return (
     <SolutionLayout title="Очередь">
-      <form className={styles.form} onSubmit={evt => evt.preventDefault()}>
+      <form className={styles.input_container} onSubmit={evt => evt.preventDefault()}>
         <Input
-          type="text"
-          maxLength={LETTER_MAX_LENGTH}
           isLimitText={true}
-          placeholder="Введите значение"
-          value={values.el}
-          name="el"
+          max={4}
+          maxLength={4}
+          value={values.value}
+          name="value"
           onChange={handleChange}
-          extraClass="mr-6"
-          data-cy="input"
+          type="string"
+          extraClass={styles.input}
         />
-        <Button
-          text={"Добавить"}
-          type="button"
-          name={QueueButtons.Enqueue}
-          isLoader={isLoadingButton.button === QueueButtons.Enqueue}
-          disabled={
-            !values.el.length || values.el.length > 4 ||
-            tail === 6 ||
-            (isLoadingButton.isLoading && isLoadingButton.button !== QueueButtons.Enqueue)
-          }
-          onClick={(e) => handleEnqueue(values.el, e)}
-          extraClass="mr-6"
-          data-cy="button-enqueue"
-        />
-        <Button
-          text={"Удалить"}
-          type="button"
-          isLoader={isLoadingButton.button === QueueButtons.Dequeue}
-          name={QueueButtons.Dequeue}
-          disabled={
-            queue.isEmpty() ||
-            tail < 0 ||
-            (isLoadingButton.isLoading && isLoadingButton.button !== QueueButtons.Dequeue)
-          }
-          onClick={(e) => handleDequeue(e)}
-          extraClass="mr-40"
-          data-cy="button-dequeue"
-        />
-        <Button
-          text={"Очистить"}
-          type="reset"
-          name={QueueButtons.Reset}
-          isLoader={isLoadingButton.button === QueueButtons.Reset}
-          onClick={(e) => handleReset(e)}
-          disabled={
-            queue.isEmpty() ||
-            (isLoadingButton.isLoading && isLoadingButton.button !== QueueButtons.Reset)
-          }
-          data-cy="button-reset"
-        />
-      </form>
-      {queueToRender && (
-        <div className={styles.wrapper}>
-          <ul className={styles.series}>
-            {queueToRender.map((item, index) => (
-              <li key={index}>
-                <Circle
-                  letter={item?.letter}
-                  state={item?.state}
-                  index={index}
-                  head={index === head ? HEAD : null}
-                  tail={index === tail ? TAIL : null}
-                />
-              </li>
-            ))}
-          </ul>
+        <div className={styles.buttons_container}>
+          <Button
+            text="Добавить"
+            id='addButton'
+            type="submit"
+            isLoader={isLoader}
+            onClick={(e) => onClick(e, "Добавить")}
+            disabled={
+              values.value === "" ||
+                (!queue.isEmpty() && arr.slice(-1)[0] === queue.getTeil())
+                ? true
+                : false
+            }
+          />
+
+          <Button
+            text="Удалить"
+            id='deleteButton'
+            type="submit"
+            onClick={(e) => onClick(e, "Удалить")}
+            disabled={!queue.isEmpty() ? false : true}
+          />
+          <Button
+            text="Очистить"
+            id='clearButton'
+            type="button"
+            extraClass={styles.clear}
+            onClick={(e) => onClick(e, "Очистить")}
+            disabled={!queue.isEmpty() ? false : true}
+          />
         </div>
-      )}
+      </form>
+      <ul className={styles.circle_container}>
+        {arr?.map((item, index) => (
+          <li key={index} className={styles.circle_item}>
+            <Circle
+              letter={item?.value}
+              state={item?.color}
+              extraClass={`${styles.fadeIn}`}
+              index={index}
+              head={!queue.isEmpty() && queue.peak() === item ? "head" : ""}
+              tail={!queue.isEmpty() && queue.getTeil() === item ? "tail" : ""}
+            />
+          </li>
+        ))}
+      </ul>
     </SolutionLayout>
   );
 };

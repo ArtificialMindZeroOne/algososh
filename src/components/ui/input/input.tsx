@@ -5,7 +5,6 @@ interface InputProps extends React.HTMLProps<HTMLInputElement> {
   placeholder?: string;
   extraClass?: string;
   isLimitText?: boolean;
-  isLimitNumbers?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -15,26 +14,12 @@ export const Input: React.FC<InputProps> = ({
   maxLength,
   max,
   isLimitText = false,
-  isLimitNumbers = false,
   ...rest
 }) => {
-  const decline = (word: string, numeral: number) => {
-    let ending = "";
-    const residue = numeral % 10;
-
-    if (5 <= numeral && numeral <= 20) {
-      ending = "ов";
-    } else if (residue === 2 || residue === 3 || residue === 4) {
-      ending = "а";
-    } else if (residue === 1) {
-      ending = "";
-    } else ending = "ов";
-
-    return word + ending;
-  };
-
-  const limitText = `Максимум — ${maxLength} ${decline("символ", Number(maxLength))}`;
-  const limitNumbers = `Максимальное число — ${max}`;
+  const limitText =
+    type === "text"
+      ? `Максимум — ${maxLength} символа`
+      : `Максимальное число — ${max}`;
 
   return (
     <div className={`${styles.content} ${extraClass}`}>
@@ -51,13 +36,6 @@ export const Input: React.FC<InputProps> = ({
           className={`text text_type_input-lim text_color_input mt-2 ml-8 ${styles.limit}`}
         >
           {limitText}
-        </span>
-      )}
-          {isLimitNumbers && (
-        <span
-          className={`text text_type_input-lim text_color_input mt-2 ml-8 ${styles.limit}`}
-        >
-          {limitNumbers}
         </span>
       )}
     </div>
